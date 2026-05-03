@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Lattice Stock Analyzer — KSE-100</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0f1a;
+    --bg2: #0f1825;
+    --bg3: #141f2e;
+    --card: #111827;
+    --card2: #1a2438;
+    --border: rgba(100,160,255,0.12);
+    --border2: rgba(100,160,255,0.22);
+    --gold: #d4a843;
+    --gold2: #f0c96a;
+    --blue: #4a9eff;
+    --blue2: #7bbcff;
+    --teal: #2dd4bf;
+    --green: #4ade80;
+    --red: #f87171;
+    --amber: #fbbf24;
+    --text: #e8edf5;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --font-sans: 'Outfit', sans-serif;
+    --font-serif: 'DM Serif Display', serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* NAV */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,15,26,0.92);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 60px;
+  }
+  .nav-brand { display: flex; align-items: center; gap: 10px; }
+  .nav-logo {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--gold), var(--blue));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-size: 14px; font-weight: 500; color: #fff;
+  }
+  .nav-title { font-family: var(--font-serif); font-size: 18px; color: var(--text); letter-spacing: 0.02em; }
+  .nav-tabs { display: flex; gap: 4px; }
+  .nav-tab {
+    padding: 6px 16px; border-radius: 6px; border: none;
+    background: transparent; color: var(--text2); cursor: pointer;
+    font-family: var(--font-sans); font-size: 13px; font-weight: 400;
+    transition: all 0.2s;
+  }
+  .nav-tab:hover { background: var(--card2); color: var(--text); }
+  .nav-tab.active { background: var(--card2); color: var(--blue); border: 1px solid var(--border2); }
+  .nav-badge {
+    padding: 3px 10px; border-radius: 20px; font-size: 11px;
+    background: rgba(212,168,67,0.15); color: var(--gold); border: 1px solid rgba(212,168,67,0.3);
+    font-family: var(--font-mono);
+  }
+
+  /* PAGES */
+  .page { display: none; padding: 2rem; max-width: 1200px; margin: 0 auto; }
+  .page.active { display: block; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  /* HERO */
+  .hero {
+    text-align: center; padding: 4rem 2rem 3rem;
+    background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(74,158,255,0.08), transparent);
+  }
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--font-mono); font-size: 11px; color: var(--gold);
+    border: 1px solid rgba(212,168,67,0.3); border-radius: 20px; padding: 4px 14px;
+    margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 0.12em;
+  }
+  .hero-title {
+    font-family: var(--font-serif); font-size: clamp(2rem, 5vw, 3.2rem);
+    color: var(--text); line-height: 1.15; margin-bottom: 1rem;
+  }
+  .hero-title span { color: var(--gold); }
+  .hero-sub { color: var(--text2); font-size: 15px; max-width: 580px; margin: 0 auto 2rem; }
+  .hero-stats { display: flex; justify-content: center; gap: 3rem; margin-top: 2.5rem; }
+  .stat-item { text-align: center; }
+  .stat-num { font-family: var(--font-mono); font-size: 28px; font-weight: 500; color: var(--gold); }
+  .stat-lbl { font-size: 12px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+
+  /* CARDS */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+  .card-title { font-size: 13px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 1rem; font-family: var(--font-mono); }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+  .grid-auto { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+
+  /* SECTION HEADER */
+  .section-header { margin-bottom: 1.5rem; }
+  .section-title { font-family: var(--font-serif); font-size: 22px; color: var(--text); margin-bottom: 4px; }
+  .section-sub { font-size: 13px; color: var(--text2); }
+
+  /* FORM ELEMENTS */
+  label { font-size: 12px; color: var(--text3); display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.06em; }
+  input[type=text], input[type=number], select {
+    width: 100%;
+    background: var(--bg2); border: 1px solid var(--border);
+    color: var(--text); border-radius: 8px; padding: 10px 14px;
+    font-family: var(--font-sans); font-size: 14px;
+    outline: none; transition: border 0.2s;
+  }
+  input:focus, select:focus { border-color: var(--blue); }
+  input[type=range] { width: 100%; accent-color: var(--blue); cursor: pointer; }
+  button.btn {
+    padding: 10px 20px; border-radius: 8px; border: 1px solid var(--border2);
+    background: var(--card2); color: var(--text); cursor: pointer;
+    font-family: var(--font-sans); font-size: 14px; font-weight: 500;
+    transition: all 0.2s;
+  }
+  button.btn:hover { background: var(--blue); color: #fff; border-color: var(--blue); }
+  button.btn.primary { background: var(--gold); color: #0a0f1a; border-color: var(--gold); }
+  button.btn.primary:hover { background: var(--gold2); }
+  button.btn.danger { background: rgba(248,113,113,0.15); color: var(--red); border-color: rgba(248,113,113,0.3); }
+  button.btn.danger:hover { background: var(--red); color: #fff; }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: var(--text3); font-weight: 500; padding: 8px 12px; border-bottom: 1px solid var(--border); font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+  td { padding: 10px 12px; border-bottom: 1px solid rgba(100,160,255,0.06); color: var(--text); }
+  tr:hover td { background: rgba(100,160,255,0.04); }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px;
+    font-family: var(--font-mono);
+  }
+  .badge.green { background: rgba(74,222,128,0.15); color: var(--green); }
+  .badge.red { background: rgba(248,113,113,0.15); color: var(--red); }
+  .badge.blue { background: rgba(74,158,255,0.15); color: var(--blue); }
+  .badge.gold { background: rgba(212,168,67,0.15); color: var(--gold); }
+  .badge.teal { background: rgba(45,212,191,0.15); color: var(--teal); }
+
+  /* HASSE DIAGRAM */
+  .hasse-wrap { position: relative; width: 100%; overflow-x: auto; }
+  #hasseCanvas { display: block; margin: 0 auto; }
+
+  /* LATTICE CONCEPTS */
+  .concept-node {
+    background: var(--card2); border: 1px solid var(--border2);
+    border-radius: 10px; padding: 12px 16px; text-align: center;
+    transition: all 0.2s; cursor: default;
+  }
+  .concept-node:hover { border-color: var(--blue); transform: translateY(-2px); }
+  .concept-node.top-node { border-color: rgba(212,168,67,0.4); background: rgba(212,168,67,0.08); }
+  .concept-node.bottom-node { border-color: rgba(100,160,255,0.3); }
+  .concept-stocks { font-family: var(--font-mono); font-size: 11px; color: var(--blue2); margin-top: 4px; }
+  .concept-attrs { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+  /* RANGE LABEL */
+  .range-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .range-val { font-family: var(--font-mono); font-size: 13px; color: var(--blue); min-width: 40px; text-align: right; }
+
+  /* RESULTS PANEL */
+  .result-box {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 1.25rem; margin-top: 1rem;
+  }
+  .result-op { font-family: var(--font-mono); font-size: 12px; color: var(--text3); margin-bottom: 8px; }
+  .result-val { font-size: 20px; font-weight: 600; color: var(--teal); font-family: var(--font-mono); }
+  .result-explain { font-size: 13px; color: var(--text2); margin-top: 6px; }
+
+  /* THEORY SECTION */
+  .theory-block { border-left: 2px solid var(--gold); padding-left: 1rem; margin-bottom: 1.5rem; }
+  .theory-block h3 { font-family: var(--font-serif); font-size: 16px; color: var(--gold2); margin-bottom: 6px; }
+  .theory-block p { font-size: 13px; color: var(--text2); line-height: 1.7; }
+  .formula-box {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 16px; font-family: var(--font-mono);
+    font-size: 13px; color: var(--teal); margin: 10px 0; display: inline-block;
+  }
+  .axiom-list { list-style: none; }
+  .axiom-list li { padding: 8px 0; border-bottom: 1px solid var(--border); display: flex; gap: 10px; font-size: 13px; color: var(--text2); }
+  .axiom-num { font-family: var(--font-mono); color: var(--gold); font-size: 12px; min-width: 24px; }
+
+  /* PORTFOLIO METER */
+  .meter-bar { height: 6px; background: var(--bg2); border-radius: 3px; overflow: hidden; margin-top: 6px; }
+  .meter-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+
+  /* ALERTS */
+  .alert { border-radius: 8px; padding: 12px 16px; font-size: 13px; margin-bottom: 12px; }
+  .alert.info { background: rgba(74,158,255,0.1); border: 1px solid rgba(74,158,255,0.25); color: var(--blue2); }
+  .alert.success { background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.25); color: var(--green); }
+
+  /* DIVIDER */
+  hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg2); }
+  ::-webkit-scrollbar-thumb { background: var(--card2); border-radius: 3px; }
+
+  /* FCA TABLE */
+  .fca-table { font-size: 12px; }
+  .fca-table th, .fca-table td { padding: 8px 10px; text-align: center; }
+  .fca-table td:first-child { text-align: left; font-weight: 500; }
+  .check { color: var(--green); font-size: 14px; }
+  .cross { color: var(--text3); font-size: 14px; }
+
+  /* PORTFOLIO GRID */
+  .port-card {
+    background: var(--card2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 1rem; display: flex; flex-direction: column; gap: 8px;
+  }
+  .port-card-ticker { font-family: var(--font-mono); font-size: 16px; color: var(--gold); font-weight: 500; }
+  .port-card-name { font-size: 12px; color: var(--text3); }
+  .port-card-score { font-size: 22px; font-weight: 600; color: var(--teal); font-family: var(--font-mono); }
+
+  /* RESPONSIVE */
+  @media (max-width: 700px) {
+    nav { padding: 0 1rem; }
+    .nav-tabs { gap: 2px; }
+    .nav-tab { padding: 5px 10px; font-size: 12px; }
+    .page { padding: 1rem; }
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .hero-stats { gap: 1.5rem; flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">
+    <div class="nav-logo">L</div>
+    <span class="nav-title">LatticeStock</span>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('home')">Overview</button>
+    <button class="nav-tab" onclick="showPage('analyzer')">Analyzer</button>
+    <button class="nav-tab" onclick="showPage('lattice')">Lattice</button>
+    <button class="nav-tab" onclick="showPage('portfolio')">Portfolio</button>
+    <button class="nav-tab" onclick="showPage('theory')">Theory</button>
+  </div>
+  <div class="nav-badge">KSE-100</div>
+</nav>
+
+<!-- ==================== HOME ==================== -->
+<div id="page-home" class="page active">
+  <div class="hero">
+    <div class="hero-eyebrow">&#9670; Final Year Project — BZU Multan &#9670;</div>
+    <h1 class="hero-title">The Mathematical Framework of<br/><span>Lattice Systems</span> in Stock Selection</h1>
+    <p class="hero-sub">Applying order theory and formal concept analysis to systematically rank and select stocks from the KSE-100 index using lattice-based operations.</p>
+    <div class="hero-stats">
+      <div class="stat-item"><div class="stat-num">8</div><div class="stat-lbl">Sample Stocks</div></div>
+      <div class="stat-item"><div class="stat-num">5</div><div class="stat-lbl">Financial Metrics</div></div>
+      <div class="stat-item"><div class="stat-num">∧∨</div><div class="stat-lbl">Meet &amp; Join Ops</div></div>
+      <div class="stat-item"><div class="stat-num">FCA</div><div class="stat-lbl">Concept Analysis</div></div>
+    </div>
+  </div>
+
+  <div style="margin-top:2rem;">
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">What is a Lattice?</div>
+        <p style="font-size:13px;color:var(--text2);line-height:1.7;">A partially ordered set (poset) where every pair of elements has a unique greatest lower bound (Meet ∧) and a unique least upper bound (Join ∨). Stocks form a lattice based on financial criteria.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Core Operations</div>
+        <p style="font-size:13px;color:var(--text2);line-height:1.7;"><strong style="color:var(--teal)">Meet (∧):</strong> Finds the greatest lower bound — the shared baseline quality between two stocks.<br/><br/><strong style="color:var(--gold)">Join (∨):</strong> Finds the least upper bound — minimum attributes to cover both stocks' potential.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Formal Concept Analysis</div>
+        <p style="font-size:13px;color:var(--text2);line-height:1.7;">Maps Objects (Stocks) to Attributes (Financial metrics) using a triple (G, M, I). Produces a Hasse diagram grouping stocks into "concepts" based on shared strengths.</p>
+      </div>
+    </div>
+
+    <div style="margin-top:1.5rem;" class="card">
+      <div class="card-title">How the System Works</div>
+      <div style="display:flex;gap:0;overflow-x:auto;padding-bottom:4px;">
+        <div style="min-width:160px;text-align:center;padding:1rem;">
+          <div style="width:44px;height:44px;background:rgba(212,168,67,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;font-size:20px;">📊</div>
+          <div style="font-size:13px;font-weight:500;color:var(--text)">1. Input Stocks</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px;">Enter financial metrics from KSE-100</div>
+        </div>
+        <div style="min-width:40px;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:20px;">→</div>
+        <div style="min-width:160px;text-align:center;padding:1rem;">
+          <div style="width:44px;height:44px;background:rgba(74,158,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;font-size:20px;">⚖️</div>
+          <div style="font-size:13px;font-weight:500;color:var(--text)">2. Define Partial Order</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px;">Rank stocks using lattice axioms</div>
+        </div>
+        <div style="min-width:40px;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:20px;">→</div>
+        <div style="min-width:160px;text-align:center;padding:1rem;">
+          <div style="width:44px;height:44px;background:rgba(45,212,191,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;font-size:20px;">🔗</div>
+          <div style="font-size:13px;font-weight:500;color:var(--text)">3. Compute Meet/Join</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px;">Apply lattice binary operations</div>
+        </div>
+        <div style="min-width:40px;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:20px;">→</div>
+        <div style="min-width:160px;text-align:center;padding:1rem;">
+          <div style="width:44px;height:44px;background:rgba(74,222,128,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;font-size:20px;">📈</div>
+          <div style="font-size:13px;font-weight:500;color:var(--text)">4. Build Portfolio</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px;">Select optimal stocks via FCA</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:1.5rem;" class="card">
+      <div class="card-title">Members</div>
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--bg2);border-radius:8px;border:1px solid var(--border);">
+          <div style="width:36px;height:36px;background:rgba(212,168,67,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--gold);">MH</div>
+          <div><div style="font-size:13px;font-weight:500;color:var(--text)">M. Hassaan Tayyab</div><div style="font-size:11px;color:var(--text3)">Developer &amp; Researcher</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--bg2);border-radius:8px;border:1px solid var(--border);">
+          <div style="width:36px;height:36px;background:rgba(74,158,255,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--blue);">AJ</div>
+          <div><div style="font-size:13px;font-weight:500;color:var(--text)">Ayesha Javed Gillani</div><div style="font-size:11px;color:var(--text3)">Researcher</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--bg2);border-radius:8px;border:1px solid var(--border);">
+          <div style="width:36px;height:36px;background:rgba(45,212,191,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--teal);">AG</div>
+          <div><div style="font-size:13px;font-weight:500;color:var(--text)">Amna Gull</div><div style="font-size:11px;color:var(--text3)">Researcher</div></div>
+        </div>
+      </div>
+      <div style="margin-top:12px;font-size:12px;color:var(--text3)">Bahaudin Zakaria University, Multan — Department of Mathematics / CASPAM</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== ANALYZER ==================== -->
+<div id="page-analyzer" class="page">
+  <div class="section-header">
+    <div class="section-title">Stock Analyzer</div>
+    <div class="section-sub">Add stocks and compute lattice operations (Meet ∧ and Join ∨)</div>
+  </div>
+
+  <div class="grid-2" style="gap:1.5rem;align-items:start;">
+    <div>
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-title">Add Stock</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+          <div><label>Ticker</label><input type="text" id="inp-ticker" placeholder="e.g. OGDC" maxlength="10"/></div>
+          <div><label>Company Name</label><input type="text" id="inp-name" placeholder="e.g. Oil &amp; Gas Dev."/></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+          <div>
+            <label>ROE (%)</label>
+            <div class="range-row"><input type="range" min="0" max="50" step="0.5" value="15" id="sl-roe" oninput="updRange('roe')"/><span class="range-val" id="rv-roe">15%</span></div>
+          </div>
+          <div>
+            <label>Debt/Equity</label>
+            <div class="range-row"><input type="range" min="0" max="5" step="0.1" value="1.0" id="sl-de" oninput="updRange('de')"/><span class="range-val" id="rv-de">1.0</span></div>
+          </div>
+          <div>
+            <label>P/E Ratio</label>
+            <div class="range-row"><input type="range" min="0" max="50" step="0.5" value="12" id="sl-pe" oninput="updRange('pe')"/><span class="range-val" id="rv-pe">12</span></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+          <div>
+            <label>Dividend Yield (%)</label>
+            <div class="range-row"><input type="range" min="0" max="15" step="0.25" value="4" id="sl-div" oninput="updRange('div')"/><span class="range-val" id="rv-div">4%</span></div>
+          </div>
+          <div>
+            <label>Revenue Growth (%)</label>
+            <div class="range-row"><input type="range" min="-20" max="50" step="0.5" value="10" id="sl-gr" oninput="updRange('gr')"/><span class="range-val" id="rv-gr">10%</span></div>
+          </div>
+        </div>
+        <button class="btn primary" onclick="addStock()" style="width:100%;">+ Add Stock to Lattice</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Lattice Operations</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+          <div><label>Stock A (Meet/Join)</label><select id="sel-a"><option value="">-- Select --</option></select></div>
+          <div><label>Stock B (Meet/Join)</label><select id="sel-b"><option value="">-- Select --</option></select></div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn" style="flex:1;" onclick="computeMeet()">Compute Meet (∧)</button>
+          <button class="btn" style="flex:1;" onclick="computeJoin()">Compute Join (∨)</button>
+        </div>
+        <div id="op-result"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="card-title">Stock Inventory — Lattice Set L</div>
+        <div id="stock-table-wrap">
+          <div class="alert info">No stocks yet. Add stocks using the form to populate the lattice.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== LATTICE ==================== -->
+<div id="page-lattice" class="page">
+  <div class="section-header">
+    <div class="section-title">Hasse Diagram &amp; Concept Lattice</div>
+    <div class="section-sub">Formal Concept Analysis — visualize the stock ordering by financial attributes</div>
+  </div>
+
+  <div class="grid-2" style="gap:1.5rem;align-items:start;">
+    <div>
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-title">Threshold Settings</div>
+        <div style="margin-bottom:10px;">
+          <label>High ROE threshold (%)</label>
+          <div class="range-row"><input type="range" min="5" max="30" step="1" value="15" id="thr-roe" oninput="updThr('roe')"/><span class="range-val" id="tv-roe">15%</span></div>
+        </div>
+        <div style="margin-bottom:10px;">
+          <label>Low Debt threshold (D/E)</label>
+          <div class="range-row"><input type="range" min="0.2" max="3" step="0.1" value="1.0" id="thr-de" oninput="updThr('de')"/><span class="range-val" id="tv-de">1.0</span></div>
+        </div>
+        <div style="margin-bottom:10px;">
+          <label>High Liquidity threshold (Div Yield %)</label>
+          <div class="range-row"><input type="range" min="1" max="10" step="0.5" value="3" id="thr-div" oninput="updThr('div')"/><span class="range-val" id="tv-div">3%</span></div>
+        </div>
+        <div style="margin-bottom:14px;">
+          <label>Stable Dividend threshold (%)</label>
+          <div class="range-row"><input type="range" min="1" max="8" step="0.25" value="2" id="thr-sdiv" oninput="updThr('sdiv')"/><span class="range-val" id="tv-sdiv">2%</span></div>
+        </div>
+        <button class="btn primary" onclick="buildLattice()" style="width:100%;">Build Concept Lattice</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">FCA Formal Context (G × M × I)</div>
+        <div id="fca-context-wrap"><div class="alert info">Add stocks and build the lattice to see the formal context.</div></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-title">Hasse Diagram</div>
+        <div class="hasse-wrap"><canvas id="hasseCanvas" width="440" height="400"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Lattice Concepts</div>
+        <div id="concepts-wrap"><div class="alert info">Build the lattice to see concept nodes.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PORTFOLIO ==================== -->
+<div id="page-portfolio" class="page">
+  <div class="section-header">
+    <div class="section-title">Portfolio Builder</div>
+    <div class="section-sub">Select stocks using lattice-based ranking and build an optimal mutual fund portfolio</div>
+  </div>
+
+  <div class="grid-2" style="gap:1.5rem;align-items:start;">
+    <div>
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-title">Ranking Weights</div>
+        <div style="margin-bottom:12px;">
+          <label>ROE Weight</label>
+          <div class="range-row"><input type="range" min="0" max="1" step="0.05" value="0.3" id="w-roe" oninput="updWeight('roe')"/><span class="range-val" id="wv-roe">30%</span></div>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label>Low Debt Weight (inverted D/E)</label>
+          <div class="range-row"><input type="range" min="0" max="1" step="0.05" value="0.25" id="w-de" oninput="updWeight('de')"/><span class="range-val" id="wv-de">25%</span></div>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label>Dividend Yield Weight</label>
+          <div class="range-row"><input type="range" min="0" max="1" step="0.05" value="0.2" id="w-div" oninput="updWeight('div')"/><span class="range-val" id="wv-div">20%</span></div>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label>Revenue Growth Weight</label>
+          <div class="range-row"><input type="range" min="0" max="1" step="0.05" value="0.25" id="w-gr" oninput="updWeight('gr')"/><span class="range-val" id="wv-gr">25%</span></div>
+        </div>
+        <div id="weight-warn" style="font-size:11px;color:var(--red);margin-bottom:10px;display:none;">Warning: weights do not sum to 1.0 (adjusting automatically)</div>
+        <button class="btn primary" onclick="rankStocks()" style="width:100%;">Compute Lattice Ranking</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Portfolio Selection</div>
+        <div style="margin-bottom:12px;">
+          <label>Number of stocks in portfolio</label>
+          <div class="range-row"><input type="range" min="1" max="10" step="1" value="3" id="port-n" oninput="updPortN()"/><span class="range-val" id="pnv">3</span></div>
+        </div>
+        <button class="btn" onclick="buildPortfolio()" style="width:100%;">Build Portfolio</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-title">Lattice Ranking Table</div>
+        <div id="rank-table-wrap"><div class="alert info">Configure weights and click "Compute Lattice Ranking".</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Selected Portfolio</div>
+        <div id="portfolio-wrap"><div class="alert info">Build portfolio to see selected stocks.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== THEORY ==================== -->
+<div id="page-theory" class="page">
+  <div class="section-header">
+    <div class="section-title">Mathematical Theory</div>
+    <div class="section-sub">Formal definitions, axioms, and operations behind the lattice framework</div>
+  </div>
+
+  <div class="grid-2" style="gap:1.5rem;">
+    <div>
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-title">Definition: Partial Order</div>
+        <div class="theory-block">
+          <h3>Poset (L, ≤)</h3>
+          <p>A lattice is a partially ordered set where every pair of elements has both a Meet and a Join. Our set L represents the collection of stocks from the KSE-100 index.</p>
+        </div>
+        <div class="card-title" style="margin-top:1rem;">Three Axioms</div>
+        <ul class="axiom-list">
+          <li><span class="axiom-num">P1</span><div><strong style="color:var(--text)">Reflexivity</strong><br/>Every stock is at least as good as itself: <span style="font-family:var(--font-mono);color:var(--teal)">a ≤ a</span></div></li>
+          <li><span class="axiom-num">P2</span><div><strong style="color:var(--text)">Antisymmetry</strong><br/>If a ≤ b and b ≤ a, then a = b. Two stocks with identical metrics are the same lattice element: <span style="font-family:var(--font-mono);color:var(--teal)">a ≤ b ∧ b ≤ a ⟹ a = b</span></div></li>
+          <li><span class="axiom-num">P3</span><div><strong style="color:var(--text)">Transitivity</strong><br/>If A dominates B, and B dominates C, then A dominates C: <span style="font-family:var(--font-mono);color:var(--teal)">a ≤ b ∧ b ≤ c ⟹ a ≤ c</span></div></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Formal Concept Analysis (FCA)</div>
+        <div class="theory-block">
+          <h3>Formal Context (G, M, I)</h3>
+          <p><strong style="color:var(--text)">G</strong> — Set of objects (Stocks)<br/><strong style="color:var(--text)">M</strong> — Set of attributes (Financial metrics: ROE, D/E, P/E, Dividend, Growth)<br/><strong style="color:var(--text)">I ⊆ G × M</strong> — Incidence relation: stock g has attribute m</p>
+        </div>
+        <div class="theory-block">
+          <h3>Concept Formation</h3>
+          <p>A formal concept is a pair (A, B) where A ⊆ G and B ⊆ M such that B is exactly the set of attributes shared by all stocks in A, and A is exactly the set of stocks that have all attributes in B.</p>
+        </div>
+        <div class="formula-box">concept = (A, B) where A' = B and B' = A</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-title">Core Operations</div>
+        <div class="theory-block">
+          <h3>Meet ∧ — Greatest Lower Bound</h3>
+          <p>The Meet of two stocks finds the stock (or virtual stock) that represents the best achievable baseline both stocks surpass. Analogous to HCF (Greatest Common Divisor).</p>
+          <div class="formula-box">a ∧ b = max { x ∈ L | x ≤ a and x ≤ b }</div>
+          <p>In practice: takes the minimum value for each metric (conservative bound).</p>
+        </div>
+        <div class="theory-block">
+          <h3>Join ∨ — Least Upper Bound</h3>
+          <p>The Join of two stocks identifies the minimum requirements to cover the potential of both. Analogous to LCM (Least Common Multiple).</p>
+          <div class="formula-box">a ∨ b = min { x ∈ L | a ≤ x and b ≤ x }</div>
+          <p>In practice: takes the maximum value for each metric (optimistic bound).</p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-title">HCF/LCM Analogy</div>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:12px;">Consider L = {1, 2, 3, 6} under divisibility relation:</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div style="background:rgba(45,212,191,0.08);border:1px solid rgba(45,212,191,0.2);border-radius:8px;padding:12px;text-align:center;">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">MEET (∧) ≡ HCF</div>
+            <div style="font-family:var(--font-mono);font-size:16px;color:var(--teal)">2 ∧ 3 = 1</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:4px;">HCF(2,3) = 1</div>
+          </div>
+          <div style="background:rgba(212,168,67,0.08);border:1px solid rgba(212,168,67,0.2);border-radius:8px;padding:12px;text-align:center;">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">JOIN (∨) ≡ LCM</div>
+            <div style="font-family:var(--font-mono);font-size:16px;color:var(--gold)">2 ∨ 3 = 6</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:4px;">LCM(2,3) = 6</div>
+          </div>
+        </div>
+        <div style="margin-top:14px;">
+          <canvas id="hasseMiniCanvas" width="200" height="180" style="display:block;margin:0 auto;"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Lattice Properties Used</div>
+        <ul class="axiom-list">
+          <li><span class="axiom-num">L1</span><div><strong style="color:var(--text)">Commutativity</strong><br/><span style="font-family:var(--font-mono);color:var(--teal);font-size:12px">a∧b = b∧a, &nbsp; a∨b = b∨a</span></div></li>
+          <li><span class="axiom-num">L2</span><div><strong style="color:var(--text)">Associativity</strong><br/><span style="font-family:var(--font-mono);color:var(--teal);font-size:12px">a∧(b∧c) = (a∧b)∧c</span></div></li>
+          <li><span class="axiom-num">L3</span><div><strong style="color:var(--text)">Absorption</strong><br/><span style="font-family:var(--font-mono);color:var(--teal);font-size:12px">a∧(a∨b) = a</span></div></li>
+          <li><span class="axiom-num">L4</span><div><strong style="color:var(--text)">Idempotency</strong><br/><span style="font-family:var(--font-mono);color:var(--teal);font-size:12px">a∧a = a, &nbsp; a∨a = a</span></div></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===================== STATE =====================
+let stocks = [
+  { ticker:'OGDC', name:'Oil & Gas Dev.', roe:18, de:0.3, pe:8, div:6, gr:12 },
+  { ticker:'HBL',  name:'Habib Bank Ltd', roe:14, de:1.8, pe:10, div:5, gr:8  },
+  { ticker:'ENGRO',name:'Engro Corp.',    roe:22, de:1.2, pe:14, div:8, gr:15 },
+  { ticker:'PSO',  name:'Pak State Oil',  roe:11, de:2.1, pe:6,  div:3, gr:5  },
+  { ticker:'LUCK', name:'Lucky Cement',   roe:20, de:0.5, pe:12, div:4, gr:18 },
+  { ticker:'MCB',  name:'MCB Bank',       roe:17, de:0.9, pe:9,  div:7, gr:10 },
+  { ticker:'FFC',  name:'Fauji Fert.',    roe:25, de:0.7, pe:11, div:9, gr:7  },
+  { ticker:'MLCF', name:'Maple Leaf Cem.',roe:9,  de:1.6, pe:7,  div:2, gr:14 }
+];
+
+let thresholds = { roe:15, de:1.0, div:3, sdiv:2 };
+let weights = { roe:0.3, de:0.25, div:0.2, gr:0.25 };
+let portN = 3;
+
+// ===================== NAV =====================
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  const tabs = document.querySelectorAll('.nav-tab');
+  const names = ['home','analyzer','lattice','portfolio','theory'];
+  tabs[names.indexOf(id)].classList.add('active');
+  if (id === 'lattice') { setTimeout(buildLattice, 100); }
+  if (id === 'analyzer') { renderStockTable(); updateSelects(); }
+  if (id === 'portfolio') { renderStockTable(); updateSelects(); }
+  if (id === 'theory') { setTimeout(drawMiniHasse, 100); }
+}
+
+// ===================== RANGE UPDATERS =====================
+function updRange(k) {
+  const map = { roe:'sl-roe', de:'sl-de', pe:'sl-pe', div:'sl-div', gr:'sl-gr' };
+  const v = parseFloat(document.getElementById(map[k]).value);
+  const sfx = (k === 'roe' || k === 'div' || k === 'gr') ? '%' : '';
+  document.getElementById('rv-' + k).textContent = v.toFixed(1) + sfx;
+}
+function updThr(k) {
+  const map = { roe:'thr-roe', de:'thr-de', div:'thr-div', sdiv:'thr-sdiv' };
+  const v = parseFloat(document.getElementById(map[k]).value);
+  thresholds[k] = v;
+  const sfx = (k === 'roe' || k === 'div' || k === 'sdiv') ? '%' : '';
+  document.getElementById('tv-' + k).textContent = v.toFixed(k==='de'?1:0) + sfx;
+}
+function updWeight(k) {
+  const map = { roe:'w-roe', de:'w-de', div:'w-div', gr:'w-gr' };
+  const v = parseFloat(document.getElementById(map[k]).value);
+  weights[k] = v;
+  document.getElementById('wv-' + k).textContent = Math.round(v * 100) + '%';
+  const sum = weights.roe + weights.de + weights.div + weights.gr;
+  document.getElementById('weight-warn').style.display = Math.abs(sum - 1) > 0.05 ? 'block' : 'none';
+}
+function updPortN() {
+  portN = parseInt(document.getElementById('port-n').value);
+  document.getElementById('pnv').textContent = portN;
+}
+
+// ===================== ADD STOCK =====================
+function addStock() {
+  const ticker = document.getElementById('inp-ticker').value.trim().toUpperCase();
+  const name = document.getElementById('inp-name').value.trim();
+  if (!ticker || !name) { alert('Please enter ticker and company name.'); return; }
+  if (stocks.find(s => s.ticker === ticker)) { alert('Ticker already exists.'); return; }
+  const roe = parseFloat(document.getElementById('sl-roe').value);
+  const de = parseFloat(document.getElementById('sl-de').value);
+  const pe = parseFloat(document.getElementById('sl-pe').value);
+  const div = parseFloat(document.getElementById('sl-div').value);
+  const gr = parseFloat(document.getElementById('sl-gr').value);
+  stocks.push({ ticker, name, roe, de, pe, div, gr });
+  document.getElementById('inp-ticker').value = '';
+  document.getElementById('inp-name').value = '';
+  renderStockTable();
+  updateSelects();
+}
+
+// ===================== STOCK TABLE =====================
+function renderStockTable() {
+  const wrap = document.getElementById('stock-table-wrap');
+  if (!wrap) return;
+  if (stocks.length === 0) { wrap.innerHTML = '<div class="alert info">No stocks yet.</div>'; return; }
+  let html = '<table><thead><tr><th>Ticker</th><th>Company</th><th>ROE%</th><th>D/E</th><th>P/E</th><th>Div%</th><th>Gr%</th><th>Score</th><th></th></tr></thead><tbody>';
+  stocks.forEach((s, i) => {
+    const score = latticeScore(s);
+    html += `<tr>
+      <td><span style="font-family:var(--font-mono);color:var(--gold)">${s.ticker}</span></td>
+      <td style="color:var(--text2)">${s.name}</td>
+      <td><span class="badge ${s.roe >= thresholds.roe ? 'green':'red'}">${s.roe.toFixed(1)}%</span></td>
+      <td><span class="badge ${s.de <= thresholds.de ? 'green':'red'}">${s.de.toFixed(1)}</span></td>
+      <td>${s.pe.toFixed(1)}</td>
+      <td><span class="badge ${s.div >= thresholds.div ? 'teal':'blue'}">${s.div.toFixed(1)}%</span></td>
+      <td><span class="badge ${s.gr > 10 ? 'green':'blue'}">${s.gr.toFixed(1)}%</span></td>
+      <td><strong style="color:var(--teal);font-family:var(--font-mono)">${score.toFixed(2)}</strong></td>
+      <td><button class="btn danger" style="padding:4px 10px;font-size:11px;" onclick="removeStock(${i})">✕</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+function removeStock(i) {
+  stocks.splice(i, 1);
+  renderStockTable();
+  updateSelects();
+}
+
+function updateSelects() {
+  ['sel-a','sel-b'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">-- Select --</option>';
+    stocks.forEach(s => { sel.innerHTML += `<option value="${s.ticker}">${s.ticker} — ${s.name}</option>`; });
+    if (prev) sel.value = prev;
+  });
+}
+
+// ===================== MEET & JOIN =====================
+function getStock(ticker) { return stocks.find(s => s.ticker === ticker); }
+
+function computeMeet() {
+  const ta = document.getElementById('sel-a').value;
+  const tb = document.getElementById('sel-b').value;
+  if (!ta || !tb || ta === tb) { alert('Select two different stocks.'); return; }
+  const a = getStock(ta), b = getStock(tb);
+  const meet = {
+    roe: Math.min(a.roe, b.roe),
+    de: Math.max(a.de, b.de),
+    pe: Math.max(a.pe, b.pe),
+    div: Math.min(a.div, b.div),
+    gr: Math.min(a.gr, b.gr)
+  };
+  showOpResult('Meet (∧)', ta, tb, meet, 'Greatest Lower Bound — the conservative baseline both stocks surpass. Analogous to HCF.');
+}
+
+function computeJoin() {
+  const ta = document.getElementById('sel-a').value;
+  const tb = document.getElementById('sel-b').value;
+  if (!ta || !tb || ta === tb) { alert('Select two different stocks.'); return; }
+  const a = getStock(ta), b = getStock(tb);
+  const join = {
+    roe: Math.max(a.roe, b.roe),
+    de: Math.min(a.de, b.de),
+    pe: Math.min(a.pe, b.pe),
+    div: Math.max(a.div, b.div),
+    gr: Math.max(a.gr, b.gr)
+  };
+  showOpResult('Join (∨)', ta, tb, join, 'Least Upper Bound — the combined potential of both stocks. Analogous to LCM.');
+}
+
+function showOpResult(op, ta, tb, res, explain) {
+  const el = document.getElementById('op-result');
+  el.innerHTML = `<div class="result-box">
+    <div class="result-op">${op} : ${ta} and ${tb}</div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:10px 0;">
+      <div style="text-align:center"><div style="font-size:10px;color:var(--text3)">ROE</div><div style="font-family:var(--font-mono);font-size:15px;color:var(--teal)">${res.roe.toFixed(1)}%</div></div>
+      <div style="text-align:center"><div style="font-size:10px;color:var(--text3)">D/E</div><div style="font-family:var(--font-mono);font-size:15px;color:var(--teal)">${res.de.toFixed(1)}</div></div>
+      <div style="text-align:center"><div style="font-size:10px;color:var(--text3)">P/E</div><div style="font-family:var(--font-mono);font-size:15px;color:var(--teal)">${res.pe.toFixed(1)}</div></div>
+      <div style="text-align:center"><div style="font-size:10px;color:var(--text3)">Div%</div><div style="font-family:var(--font-mono);font-size:15px;color:var(--teal)">${res.div.toFixed(1)}%</div></div>
+      <div style="text-align:center"><div style="font-size:10px;color:var(--text3)">Growth%</div><div style="font-family:var(--font-mono);font-size:15px;color:var(--teal)">${res.gr.toFixed(1)}%</div></div>
+    </div>
+    <div class="result-explain">${explain}</div>
+  </div>`;
+}
+
+// ===================== LATTICE SCORE =====================
+function latticeScore(s) {
+  const sum = weights.roe + weights.de + weights.div + weights.gr;
+  const wr = weights.roe / sum, wd = weights.de / sum, wv = weights.div / sum, wg = weights.gr / sum;
+  const normROE = Math.min(s.roe / 30, 1);
+  const normDE = Math.max(0, 1 - s.de / 5);
+  const normDiv = Math.min(s.div / 15, 1);
+  const normGr = Math.min(Math.max((s.gr + 20) / 70, 0), 1);
+  return (normROE * wr + normDE * wd + normDiv * wv + normGr * wg) * 100;
+}
+
+// ===================== FCA =====================
+function buildLattice() {
+  if (stocks.length === 0) {
+    document.getElementById('fca-context-wrap').innerHTML = '<div class="alert info">Add stocks first.</div>';
+    document.getElementById('concepts-wrap').innerHTML = '<div class="alert info">Add stocks first.</div>';
+    clearCanvas();
+    return;
+  }
+
+  const attrs = ['High ROE', 'Low Debt', 'High Liquidity', 'Stable Dividend'];
+  const stockAttrs = stocks.map(s => ({
+    ticker: s.ticker,
+    attrs: [
+      s.roe >= thresholds.roe,
+      s.de <= thresholds.de,
+      s.div >= thresholds.div,
+      s.div >= thresholds.sdiv
+    ]
+  }));
+
+  // FCA context table
+  let html = '<div style="overflow-x:auto"><table class="fca-table"><thead><tr><th>Stock</th>';
+  attrs.forEach(a => { html += `<th>${a}</th>`; });
+  html += '</tr></thead><tbody>';
+  stockAttrs.forEach(sa => {
+    html += `<tr><td>${sa.ticker}</td>`;
+    sa.attrs.forEach(v => { html += `<td>${v ? '<span class="check">✓</span>' : '<span class="cross">·</span>'}</td>`; });
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+  document.getElementById('fca-context-wrap').innerHTML = html;
+
+  // Build concepts
+  const concepts = buildConcepts(stockAttrs, attrs);
+  let chtml = '';
+  concepts.forEach((c, i) => {
+    const isTop = c.stocks.length === stocks.length;
+    const isBot = c.attrs.length === attrs.length || c.stocks.length === 1;
+    chtml += `<div class="concept-node ${isTop ? 'top-node' : ''} ${isBot && !isTop ? 'bottom-node' : ''}" style="margin-bottom:8px;">
+      <div style="font-size:12px;font-weight:500;color:var(--text)">Concept ${i+1} ${isTop ? '⊤ (Top)' : ''}</div>
+      <div class="concept-stocks">{${c.stocks.join(', ')}}</div>
+      <div class="concept-attrs">${c.attrs.length > 0 ? c.attrs.join(', ') : '∅ (All Stocks)'}</div>
+    </div>`;
+  });
+  document.getElementById('concepts-wrap').innerHTML = chtml;
+
+  drawHasse(concepts, stockAttrs, attrs);
+}
+
+function buildConcepts(stockAttrs, attrs) {
+  const concepts = [];
+  const n = attrs.length;
+  // For each subset of attributes, find stocks that have ALL those attributes
+  for (let mask = 0; mask < (1 << n); mask++) {
+    const selectedAttrs = attrs.filter((_, i) => mask & (1 << i));
+    const matchingStocks = stockAttrs.filter(sa => selectedAttrs.every((_, i) => {
+      const idx = attrs.indexOf(selectedAttrs[i]);
+      return sa.attrs[idx];
+    })).map(sa => sa.ticker);
+    if (matchingStocks.length === 0) continue;
+    // Deduplicate
+    const existing = concepts.find(c => c.stocks.join(',') === matchingStocks.join(','));
+    if (existing) {
+      existing.attrs = [...new Set([...existing.attrs, ...selectedAttrs])];
+    } else {
+      concepts.push({ stocks: matchingStocks, attrs: selectedAttrs });
+    }
+  }
+  // Add "All Stocks" top concept if not present
+  const allTickers = stockAttrs.map(s => s.ticker);
+  if (!concepts.find(c => c.stocks.join(',') === allTickers.join(','))) {
+    concepts.unshift({ stocks: allTickers, attrs: [] });
+  }
+  // Sort by number of stocks descending
+  concepts.sort((a, b) => b.stocks.length - a.stocks.length || a.attrs.length - b.attrs.length);
+  return concepts;
+}
+
+// ===================== HASSE DIAGRAM =====================
+function clearCanvas() {
+  const c = document.getElementById('hasseCanvas');
+  if (!c) return;
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0, 0, c.width, c.height);
+}
+
+function drawHasse(concepts, stockAttrs, attrs) {
+  const canvas = document.getElementById('hasseCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const levels = [];
+  const seen = new Set();
+  const unique = concepts.filter(c => {
+    const key = c.stocks.join(',');
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, 12);
+
+  // Assign levels by number of attributes
+  const maxAttr = Math.max(...unique.map(c => c.attrs.length));
+  const levelMap = {};
+  unique.forEach(c => {
+    const l = c.attrs.length;
+    if (!levelMap[l]) levelMap[l] = [];
+    levelMap[l].push(c);
+  });
+  const levelKeys = Object.keys(levelMap).sort((a,b) => a-b);
+  const nLevels = levelKeys.length;
+  const levelH = H / (nLevels + 1);
+
+  const positions = [];
+  levelKeys.forEach((lk, li) => {
+    const group = levelMap[lk];
+    const y = H - levelH * (li + 1);
+    group.forEach((c, gi) => {
+      const x = W * (gi + 1) / (group.length + 1);
+      positions.push({ concept: c, x, y });
+    });
+  });
+
+  // Draw edges
+  ctx.strokeStyle = 'rgba(74,158,255,0.25)';
+  ctx.lineWidth = 1.5;
+  positions.forEach((p, i) => {
+    positions.forEach((q, j) => {
+      if (i >= j) return;
+      // Edge if q's stocks are a subset of p's stocks and q is one level below
+      if (q.concept.attrs.length === p.concept.attrs.length + 1) {
+        const pHasQ = q.concept.stocks.every(s => p.concept.stocks.includes(s));
+        if (pHasQ) {
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(q.x, q.y);
+          ctx.stroke();
+        }
+      }
+    });
+  });
+
+  // Draw nodes
+  positions.forEach(p => {
+    const isTop = p.concept.stocks.length === stocks.length;
+    const r = 22;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = isTop ? 'rgba(212,168,67,0.2)' : 'rgba(74,158,255,0.15)';
+    ctx.fill();
+    ctx.strokeStyle = isTop ? 'rgba(212,168,67,0.6)' : 'rgba(74,158,255,0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.fillStyle = isTop ? '#d4a843' : '#7bbcff';
+    ctx.font = 'bold 10px "DM Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const label = p.concept.stocks.length > 3
+      ? p.concept.stocks.slice(0,2).join(',') + '…'
+      : p.concept.stocks.join(',');
+    ctx.fillText(label, p.x, p.y);
+  });
+}
+
+function drawMiniHasse() {
+  const canvas = document.getElementById('hasseMiniCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const nodes = [
+    { label:'6', x:100, y:20, color:'#d4a843' },
+    { label:'2', x:50,  y:80, color:'#4a9eff' },
+    { label:'3', x:150, y:80, color:'#4a9eff' },
+    { label:'1', x:100, y:140, color:'#2dd4bf' }
+  ];
+  const edges = [[0,1],[0,2],[1,3],[2,3]];
+
+  ctx.strokeStyle = 'rgba(100,160,255,0.3)';
+  ctx.lineWidth = 1.5;
+  edges.forEach(([a,b]) => {
+    ctx.beginPath();
+    ctx.moveTo(nodes[a].x, nodes[a].y);
+    ctx.lineTo(nodes[b].x, nodes[b].y);
+    ctx.stroke();
+  });
+  nodes.forEach(n => {
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, 20, 0, Math.PI*2);
+    ctx.fillStyle = n.color + '30';
+    ctx.fill();
+    ctx.strokeStyle = n.color;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.fillStyle = n.color;
+    ctx.font = 'bold 14px "DM Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(n.label, n.x, n.y);
+  });
+}
+
+// ===================== PORTFOLIO =====================
+function rankStocks() {
+  if (stocks.length === 0) { document.getElementById('rank-table-wrap').innerHTML = '<div class="alert info">Add stocks first.</div>'; return; }
+  const ranked = stocks.map(s => ({ ...s, score: latticeScore(s) })).sort((a,b) => b.score - a.score);
+  let html = '<table><thead><tr><th>Rank</th><th>Ticker</th><th>Company</th><th>ROE%</th><th>D/E</th><th>Div%</th><th>Gr%</th><th>Lattice Score</th></tr></thead><tbody>';
+  ranked.forEach((s, i) => {
+    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
+    html += `<tr>
+      <td style="font-family:var(--font-mono)">${medal}</td>
+      <td style="font-family:var(--font-mono);color:var(--gold)">${s.ticker}</td>
+      <td style="color:var(--text2)">${s.name}</td>
+      <td>${s.roe.toFixed(1)}%</td>
+      <td>${s.de.toFixed(1)}</td>
+      <td>${s.div.toFixed(1)}%</td>
+      <td>${s.gr.toFixed(1)}%</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="meter-bar" style="width:80px;"><div class="meter-fill" style="width:${s.score.toFixed(1)}%;background:linear-gradient(90deg,#2dd4bf,#4a9eff)"></div></div>
+          <span style="font-family:var(--font-mono);color:var(--teal)">${s.score.toFixed(1)}</span>
+        </div>
+      </td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('rank-table-wrap').innerHTML = html;
+}
+
+function buildPortfolio() {
+  if (stocks.length === 0) { document.getElementById('portfolio-wrap').innerHTML = '<div class="alert info">Add stocks first.</div>'; return; }
+  const ranked = stocks.map(s => ({ ...s, score: latticeScore(s) })).sort((a,b) => b.score - a.score);
+  const selected = ranked.slice(0, Math.min(portN, ranked.length));
+  const avgScore = selected.reduce((acc,s) => acc + s.score, 0) / selected.length;
+  let html = `<div class="alert success" style="margin-bottom:12px;">Portfolio built using Lattice Join (∨) — Top ${selected.length} stocks selected. Avg Score: ${avgScore.toFixed(1)}</div>`;
+  html += '<div class="grid-auto">';
+  selected.forEach(s => {
+    html += `<div class="port-card">
+      <div><div class="port-card-ticker">${s.ticker}</div><div class="port-card-name">${s.name}</div></div>
+      <div class="port-card-score">${s.score.toFixed(1)}</div>
+      <div style="font-size:11px;color:var(--text3)">ROE: ${s.roe.toFixed(1)}% | D/E: ${s.de.toFixed(1)} | Div: ${s.div.toFixed(1)}% | Gr: ${s.gr.toFixed(1)}%</div>
+      <div class="meter-bar"><div class="meter-fill" style="width:${s.score.toFixed(1)}%;background:linear-gradient(90deg,var(--gold),var(--teal))"></div></div>
+    </div>`;
+  });
+  html += '</div>';
+  document.getElementById('portfolio-wrap').innerHTML = html;
+}
+
+// ===================== INIT =====================
+window.onload = () => {
+  updRange('roe'); updRange('de'); updRange('pe'); updRange('div'); updRange('gr');
+  updThr('roe'); updThr('de'); updThr('div'); updThr('sdiv');
+  updWeight('roe'); updWeight('de'); updWeight('div'); updWeight('gr');
+  updPortN();
+  renderStockTable();
+  updateSelects();
+  setTimeout(drawMiniHasse, 200);
+};
+</script>
+</body>
+</html>
